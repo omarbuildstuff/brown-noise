@@ -2,7 +2,7 @@
 // completely offline after the first visit. The noise itself is generated
 // in the browser, so the only thing we need to ship offline is the shell.
 
-const CACHE = 'stillness-v7';
+const CACHE = 'stillness-v8';
 const SHELL = [
   './',
   './index.html',
@@ -11,6 +11,10 @@ const SHELL = [
   './manifest.webmanifest',
   './icon.svg',
   './icon-maskable.svg',
+  './apple-touch-icon.png',
+  './icon-192.png',
+  './icon-512.png',
+  './icon-maskable-512.png',
 ];
 
 self.addEventListener('install', (event) => {

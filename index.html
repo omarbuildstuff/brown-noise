@@ -16,7 +16,12 @@
 
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="./icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+  <!-- iOS Add-to-Home-Screen requires a PNG at this exact name to guarantee
+       the logo shows up. SVG apple-touch-icons are unreliable across iOS
+       versions — Safari sometimes falls back to a screenshot. -->
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
 
   <!-- Workbench: variable mono display with a BLCK axis for cassette-era
        engineering vibe. Reddit Mono: humanist monospace for labels & numbers.
