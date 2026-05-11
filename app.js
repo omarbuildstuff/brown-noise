@@ -73,6 +73,14 @@ function unlockCtx() {
     if (!AC) return;
     ctx = new AC({ latencyHint: 'playback' });
   }
+  // iOS Safari 17+: set audio session category to 'playback' so the output
+  // bypasses the silent switch (the same way Apple Music does) and shows
+  // on the lock screen. Without this the silent switch mutes Web Audio
+  // even though Safari shows the "audio playing" tab indicator.
+  try {
+    if (navigator.audioSession) navigator.audioSession.type = 'playback';
+    if (ctx.audioSession)       ctx.audioSession.type       = 'playback';
+  } catch {}
   // Fire-and-forget — resume must be called in-gesture but doesn't need awaiting.
   ctx.resume?.().catch(() => {});
 }
