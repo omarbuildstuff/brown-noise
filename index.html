@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0e0c0a">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Warm brown noise for focus, sleep, and quiet. Generated continuously in your browser; works fully offline.">
+
+  <!-- iOS standalone-PWA hints -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Stillness">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <title>Stillness — Brown Noise</title>
+
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon.svg">
+
+  <!-- System-stack first; Inter from Google Fonts is a progressive enhancement.
+       The service worker skips cross-origin caching, so offline gracefully
+       falls back to system-ui without breaking the look. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap">
+
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-playing="false" data-idle="false">
+  <main>
+    <div class="orb-wrap">
+      <div class="orb"      aria-hidden="true"></div>
+      <div class="orb-core" aria-hidden="true"></div>
+      <button id="toggle" class="toggle"
+              type="button"
+              aria-label="Play brown noise"
+              aria-pressed="false"></button>
+    </div>
+
+    <div class="controls">
+      <section class="volume">
+        <span class="label" id="volume-label">Volume</span>
+        <input id="volume" type="range" min="0" max="100" value="40"
+               aria-labelledby="volume-label">
+      </section>
+
+      <section class="timer">
+        <span class="label">Sleep timer</span>
+        <div class="pills" role="group" aria-label="Sleep timer">
+          <button class="pill" type="button" data-minutes="0"  aria-pressed="true">Off</button>
+          <button class="pill" type="button" data-minutes="15" aria-pressed="false">15 m</button>
+          <button class="pill" type="button" data-minutes="30" aria-pressed="false">30 m</button>
+          <button class="pill" type="button" data-minutes="60" aria-pressed="false">60 m</button>
+          <button class="pill" type="button" data-minutes="90" aria-pressed="false">90 m</button>
+        </div>
+        <span id="timer-remaining" class="timer-remaining" aria-live="polite"></span>
+      </section>
+    </div>
+  </main>
+
+  <button id="install" class="install" type="button">Install app</button>
+
+  <script src="./app.js" type="module"></script>
+</body>
+</html>
