@@ -1,19 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Cassette-deck face: dark warm panel with two amber lamp reels -->
   <defs>
-    <radialGradient id="bg" cx="50%" cy="50%" r="65%">
-      <stop offset="0%" stop-color="#171310"/>
-      <stop offset="100%" stop-color="#0a0807"/>
+    <radialGradient id="bg" cx="50%" cy="35%" r="80%">
+      <stop offset="0%"  stop-color="#241a13"/>
+      <stop offset="100%" stop-color="#0a0805"/>
     </radialGradient>
-    <radialGradient id="bloom" cx="50%" cy="50%" r="38%">
-      <stop offset="0%" stop-color="#c89567" stop-opacity="0.55"/>
-      <stop offset="55%" stop-color="#c89567" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="#c89567" stop-opacity="0"/>
+    <radialGradient id="lamp" cx="50%" cy="50%" r="60%">
+      <stop offset="0%"  stop-color="#e9b97a"/>
+      <stop offset="35%" stop-color="#c8895b"/>
+      <stop offset="80%" stop-color="#3a2417" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#1a1009" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#5a3d24" stop-opacity="0"/>
+      <stop offset="50%"  stop-color="#5a3d24" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#5a3d24" stop-opacity="0"/>
+    </linearGradient>
   </defs>
+
   <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="200" fill="url(#bloom)"/>
-  <circle cx="256" cy="256" r="56"  fill="none" stroke="#c89567" stroke-opacity="0.60" stroke-width="1.5"/>
-  <circle cx="256" cy="256" r="94"  fill="none" stroke="#c89567" stroke-opacity="0.32" stroke-width="1"/>
-  <circle cx="256" cy="256" r="136" fill="none" stroke="#c89567" stroke-opacity="0.16" stroke-width="1"/>
+
+  <!-- top inset rule -->
+  <rect x="64" y="148" width="384" height="1" fill="url(#rule)"/>
+
+  <!-- two reel lamps -->
+  <g>
+    <circle cx="180" cy="262" r="78" fill="url(#lamp)"/>
+    <circle cx="180" cy="262" r="22" fill="none" stroke="#e9b97a" stroke-width="1.2" stroke-opacity="0.85"/>
+    <circle cx="180" cy="262" r="4"  fill="#f4d6a5"/>
+  </g>
+  <g>
+    <circle cx="332" cy="262" r="78" fill="url(#lamp)"/>
+    <circle cx="332" cy="262" r="22" fill="none" stroke="#e9b97a" stroke-width="1.2" stroke-opacity="0.85"/>
+    <circle cx="332" cy="262" r="4"  fill="#f4d6a5"/>
+  </g>
+
+  <!-- bottom rule + segment meter hint -->
+  <rect x="64" y="386" width="384" height="1" fill="url(#rule)" opacity="0.7"/>
+  <g fill="#c8895b">
+    <rect x="120" y="402" width="14" height="6" rx="1" opacity="0.95"/>
+    <rect x="140" y="402" width="14" height="6" rx="1" opacity="0.85"/>
+    <rect x="160" y="402" width="14" height="6" rx="1" opacity="0.70"/>
+    <rect x="180" y="402" width="14" height="6" rx="1" opacity="0.55"/>
+    <rect x="200" y="402" width="14" height="6" rx="1" opacity="0.40"/>
+    <rect x="220" y="402" width="14" height="6" rx="1" opacity="0.30"/>
+    <rect x="240" y="402" width="14" height="6" rx="1" opacity="0.22"/>
+    <rect x="260" y="402" width="14" height="6" rx="1" opacity="0.18" fill="#7a563a"/>
+    <rect x="280" y="402" width="14" height="6" rx="1" opacity="0.18" fill="#7a563a"/>
+    <rect x="300" y="402" width="14" height="6" rx="1" opacity="0.18" fill="#7a563a"/>
+    <rect x="320" y="402" width="14" height="6" rx="1" opacity="0.18" fill="#7a563a"/>
+    <rect x="340" y="402" width="14" height="6" rx="1" opacity="0.18" fill="#7a563a"/>
+    <rect x="360" y="402" width="14" height="6" rx="1" opacity="0.18" fill="#7a563a"/>
+    <rect x="380" y="402" width="14" height="6" rx="1" opacity="0.18" fill="#7a563a"/>
+  </g>
 </svg>

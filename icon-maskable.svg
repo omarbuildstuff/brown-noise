@@ -1,20 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Maskable variant: full-bleed bg, visual content inside 80% safe zone (centered ~410x410). -->
+  <!-- Maskable variant: full-bleed bg, art kept inside 80% safe zone -->
   <defs>
-    <radialGradient id="bg" cx="50%" cy="50%" r="72%">
-      <stop offset="0%" stop-color="#171310"/>
-      <stop offset="100%" stop-color="#0a0807"/>
+    <radialGradient id="bg" cx="50%" cy="35%" r="85%">
+      <stop offset="0%"  stop-color="#241a13"/>
+      <stop offset="100%" stop-color="#0a0805"/>
     </radialGradient>
-    <radialGradient id="bloom" cx="50%" cy="50%" r="30%">
-      <stop offset="0%" stop-color="#c89567" stop-opacity="0.55"/>
-      <stop offset="55%" stop-color="#c89567" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="#c89567" stop-opacity="0"/>
+    <radialGradient id="lamp" cx="50%" cy="50%" r="60%">
+      <stop offset="0%"  stop-color="#e9b97a"/>
+      <stop offset="35%" stop-color="#c8895b"/>
+      <stop offset="80%" stop-color="#3a2417" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#1a1009" stop-opacity="0"/>
     </radialGradient>
   </defs>
+
   <rect width="512" height="512" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="158" fill="url(#bloom)"/>
-  <circle cx="256" cy="256" r="44"  fill="none" stroke="#c89567" stroke-opacity="0.60" stroke-width="1.5"/>
-  <circle cx="256" cy="256" r="74"  fill="none" stroke="#c89567" stroke-opacity="0.32" stroke-width="1"/>
-  <circle cx="256" cy="256" r="106" fill="none" stroke="#c89567" stroke-opacity="0.16" stroke-width="1"/>
+
+  <g>
+    <circle cx="200" cy="256" r="56" fill="url(#lamp)"/>
+    <circle cx="200" cy="256" r="16" fill="none" stroke="#e9b97a" stroke-width="1.2" stroke-opacity="0.85"/>
+    <circle cx="200" cy="256" r="3"  fill="#f4d6a5"/>
+  </g>
+  <g>
+    <circle cx="312" cy="256" r="56" fill="url(#lamp)"/>
+    <circle cx="312" cy="256" r="16" fill="none" stroke="#e9b97a" stroke-width="1.2" stroke-opacity="0.85"/>
+    <circle cx="312" cy="256" r="3"  fill="#f4d6a5"/>
+  </g>
 </svg>

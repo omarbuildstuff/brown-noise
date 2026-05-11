@@ -1,167 +1,366 @@
 /* ============================================================
-   Stillness — palette & global tokens
+   Stillness — Cassette / Analog Warmth
+   Late-night hi-fi object. Paper grain, lamp amber, knurled
+   bezels, segmented level meter, monospace caps.
    ============================================================ */
+
 :root {
-  --bg:           #0e0c0a;
-  --bg-elev:      #141210;
-  --fg:           #e8e2d8;             /* warm off-white, never pure white */
-  --fg-dim:       rgba(232, 226, 216, 0.55);
-  --fg-faint:     rgba(232, 226, 216, 0.18);
-  --accent:       #c89567;             /* muted amber */
-  --accent-glow:  rgba(200, 149, 103, 0.18);
-  --accent-glow2: rgba(200, 149, 103, 0.32);
-  --accent-line:  rgba(200, 149, 103, 0.45);
+  /* Palette in OKLCH. Hue 60 (warm amber/honey) carries through every
+     surface and text token so the panel reads as one cohesive object. */
+  --bg-base:        oklch(0.135 0.012 60);
+  --bg-base-bot:    oklch(0.085 0.008 55);
 
-  --radius-pill:  999px;
-  --ease:         cubic-bezier(0.22, 0.61, 0.36, 1);
+  --deck-face:      oklch(0.188 0.016 60);
+  --deck-edge-top:  oklch(0.260 0.020 65);
+  --deck-edge-bot:  oklch(0.075 0.008 55);
+  --deck-rule:      oklch(0.245 0.018 60);
 
-  --t-fade:       600ms;
-  --t-snap:       240ms;
+  --fg:             oklch(0.905 0.025 75);   /* warm cream */
+  --fg-dim:         oklch(0.680 0.030 70);   /* tracked labels */
+  --fg-faint:       oklch(0.420 0.020 65);   /* tick marks, dim segs */
+  --fg-mute:        oklch(0.300 0.015 60);   /* low contrast lines */
+
+  --amber:          oklch(0.760 0.140 65);   /* lamp on */
+  --amber-bright:   oklch(0.840 0.150 72);   /* hottest spot */
+  --amber-soft:     oklch(0.580 0.090 60);   /* dimmed lamp */
+  --amber-glow:     oklch(0.700 0.140 65 / 0.45);
+
+  /* Spacing — 4pt scale, semantic names */
+  --sp-2xs:  4px;
+  --sp-xs:   8px;
+  --sp-sm:  12px;
+  --sp-md:  16px;
+  --sp-lg:  24px;
+  --sp-xl:  32px;
+  --sp-2xl: 48px;
+  --sp-3xl: 64px;
+  --sp-4xl: 96px;
+
+  /* Motion */
+  --ease-out-quart:  cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+  --bloom-ms:        600ms;
+  --fade-ms:         400ms;
+
+  --radius-deck:     14px;
+  --radius-pill:     999px;
+
+  /* Variable font axes */
+  --display-font:  "Workbench", ui-monospace, "SF Mono", "Menlo", monospace;
+  --mono-font:     "Reddit Mono", ui-monospace, "SF Mono", "Menlo", monospace;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 html { height: 100%; }
 
 body {
   min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(2rem, 5vw, 3.5rem);
-  padding: clamp(1.5rem, 5vw, 3rem);
+  display: grid;
+  place-items: center;
+  padding: clamp(var(--sp-lg), 5vw, var(--sp-2xl));
 
   color: var(--fg);
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 300;
-  letter-spacing: 0.005em;
+  font-family: var(--mono-font);
+  font-weight: 400;
+  font-feature-settings: "tnum" 1, "cv01" 1, "ss01" 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-
   overscroll-behavior: none;
-  /* Subtle warm vignette — radial gradient lifts the center without ever
-     reading as a "light", so the page still feels dark and quiet. */
+
   background:
-    radial-gradient(ellipse at center, #15110d 0%, var(--bg) 55%, #080706 100%);
+    radial-gradient(ellipse at 50% 35%, oklch(0.165 0.014 60) 0%, var(--bg-base) 50%, var(--bg-base-bot) 100%);
 }
 
-main {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(2rem, 5vw, 3.5rem);
-  width: min(420px, 100%);
+/* Paper grain — fine static noise overlay. Inline SVG keeps it offline. */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.10;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 0.85  0 0 0 0 0.65  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 240px;
 }
 
 /* ============================================================
-   Breathing orb — the centerpiece
+   The deck — one elevated object holding everything
    ============================================================ */
-.orb-wrap {
+.stage {
   position: relative;
-  width: clamp(220px, 60vw, 280px);
-  aspect-ratio: 1;
+  z-index: 2;
+  width: 100%;
   display: grid;
   place-items: center;
-  isolation: isolate;
 }
 
-.orb {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
+.deck {
+  width: min(440px, 100%);
+  padding: var(--sp-xl) var(--sp-lg) var(--sp-lg);
+  display: grid;
+  gap: var(--sp-xl);
+
   background:
-    radial-gradient(circle at 50% 50%,
-      var(--accent-glow2) 0%,
-      var(--accent-glow)  30%,
-      transparent         65%);
-  filter: blur(2px);
-  opacity: 0.85;
-  transform: scale(1);
-  pointer-events: none;
-  transition: opacity 1.2s var(--ease);
-}
+    linear-gradient(180deg, oklch(0.205 0.018 62) 0%, var(--deck-face) 18%, var(--deck-face) 100%);
+  border-radius: var(--radius-deck);
 
-.orb-core {
-  position: relative;
-  width: 36%;
-  height: 36%;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 30%,
-      rgba(232, 218, 196, 0.18) 0%,
-      rgba(200, 149, 103, 0.08) 40%,
-      transparent 80%);
-  border: 1px solid rgba(232, 226, 216, 0.06);
+  /* Top bevel highlight + bottom drop shadow + faint inner ring for depth */
   box-shadow:
-    inset 0 0 24px rgba(200, 149, 103, 0.12),
-    0 0 60px        rgba(200, 149, 103, 0.06);
-  pointer-events: none;
-  transition: box-shadow 1.2s var(--ease);
+    inset 0 1px 0 var(--deck-edge-top),
+    inset 0 -1px 0 oklch(0.105 0.010 55),
+    inset 0 0 0 1px oklch(0.230 0.018 60 / 0.5),
+    0 1px 0 oklch(0.290 0.024 65 / 0.25),
+    0 24px 60px -28px oklch(0.020 0.005 50 / 0.9),
+    0 8px 20px -10px oklch(0.020 0.005 50 / 0.5);
 }
 
-@keyframes breathe {
-  0%, 100% { transform: scale(1);    opacity: 0.78; }
-  50%      { transform: scale(1.06); opacity: 1;    }
+/* ----- header: wordmark + cassette stamp ----- */
+.deck-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  padding-bottom: var(--sp-md);
+  border-bottom: 1px solid var(--deck-rule);
 }
 
-body[data-playing="true"] .orb {
-  animation: breathe 6s ease-in-out infinite;
+.wordmark {
+  font-family: var(--display-font);
+  /* Workbench has a BLCK axis (0–100). Crank it up for chunk-mechanical feel. */
+  font-variation-settings: "BLCK" 70;
+  font-size: clamp(22px, 4.4vw, 28px);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg);
+  line-height: 1;
 }
 
-body[data-playing="true"] .orb-core {
-  box-shadow:
-    inset 0 0 32px rgba(200, 149, 103, 0.22),
-    0 0 80px        rgba(200, 149, 103, 0.12);
-}
-
-/* The actual click target — invisible button sitting on top of the orb. */
-.toggle {
-  position: absolute;
-  inset: 0;
-  appearance: none;
-  background: transparent;
-  border: 0;
-  border-radius: 50%;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  z-index: 2;
-}
-.toggle:focus-visible {
-  outline: 1px solid rgba(232, 226, 216, 0.25);
-  outline-offset: 10px;
+.stamp {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  padding: 4px 8px;
+  border: 1px solid var(--fg-mute);
+  border-radius: 3px;
+  /* Slight inset shadow to feel pressed-in */
+  box-shadow: inset 0 1px 0 oklch(0.105 0.010 55);
 }
 
 /* ============================================================
-   Controls — fade gently while idle
+   Segmented level meter
+   Bar of N segments. Lit segments amber, rest faint cream.
+   Sequenced bloom L→R on play, R→L fade on pause.
    ============================================================ */
-.controls {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-  width: 100%;
-  transition: opacity var(--t-fade) var(--ease);
+.meter {
+  --segs: 24;
+  display: grid;
+  grid-template-columns: repeat(var(--segs), 1fr);
+  gap: 3px;
+  height: 18px;
+  padding: 3px;
+  background: oklch(0.105 0.010 55);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 oklch(0.060 0.006 50),
+    inset 0 -1px 0 oklch(0.260 0.020 65 / 0.35);
 }
 
-body[data-idle="true"] .controls { opacity: 0.3; }
+.meter-seg {
+  background: var(--fg-mute);
+  border-radius: 1px;
+  opacity: 0.35;
+  transition:
+    background var(--fade-ms) var(--ease-out-quart),
+    opacity    var(--fade-ms) var(--ease-out-quart),
+    box-shadow var(--fade-ms) var(--ease-out-quart);
+}
 
-.label {
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
+.meter-seg[data-lit="true"] {
+  background: var(--amber);
+  opacity: 1;
+  box-shadow:
+    0 0 6px var(--amber-glow),
+    inset 0 1px 0 var(--amber-bright);
+}
+
+/* Stagger transitions across the bar.
+   Playing → bloom L→R (low i first).
+   Stopping → fade R→L (high i first). */
+body[data-playing="true"]  .meter-seg { transition-delay: calc(var(--i) * 22ms); }
+body[data-playing="false"] .meter-seg { transition-delay: calc((var(--segs) - 1 - var(--i)) * 16ms); }
+
+/* When mounted but never played, no stagger noise on first paint */
+body[data-mounted="false"] .meter-seg { transition: none; }
+
+/* ============================================================
+   The lamp — large round play target
+   Subtle knurled bezel via conic-gradient ring.
+   ============================================================ */
+.lamp {
+  --size: clamp(132px, 28vw, 160px);
+
+  position: relative;
+  width: var(--size);
+  height: var(--size);
+  justify-self: center;
+
+  appearance: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
+
+  background:
+    radial-gradient(circle at 50% 38%, oklch(0.230 0.018 62) 0%, oklch(0.150 0.012 58) 65%, oklch(0.090 0.008 55) 100%);
+
+  box-shadow:
+    /* Top rim highlight */
+    inset 0 2px 0 -1px oklch(0.345 0.030 70 / 0.7),
+    /* Bottom rim shadow */
+    inset 0 -2px 0 -1px oklch(0.045 0.005 50 / 0.9),
+    /* Subtle outer hairline */
+    0 0 0 1px oklch(0.080 0.008 55),
+    /* Drop shadow for elevation */
+    0 4px 10px oklch(0.040 0.005 50 / 0.6),
+    0 1px 2px oklch(0.020 0.005 50 / 0.8);
+
+  transition: transform 120ms var(--ease-out-quart),
+              box-shadow 240ms var(--ease-out-quart);
+}
+
+.lamp:active { transform: translateY(1px); }
+
+.lamp:focus-visible {
+  outline: 1px solid var(--amber-soft);
+  outline-offset: 6px;
+}
+
+/* Knurled bezel — fine alternating sectors around the outer rim. */
+.lamp-bezel {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65), oklch(0.165 0.014 58),
+    oklch(0.265 0.022 65)
+  );
+  mask: radial-gradient(circle, transparent 70%, black 71%, black 99%, transparent 100%);
+  -webkit-mask: radial-gradient(circle, transparent 70%, black 71%, black 99%, transparent 100%);
+  opacity: 0.7;
+}
+
+/* Inner light disc — the actual lamp */
+.lamp-glow {
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%,
+      oklch(0.30 0.06 65) 0%,
+      oklch(0.20 0.03 60) 60%,
+      oklch(0.12 0.012 58) 100%);
+  box-shadow:
+    inset 0 1px 0 oklch(0.345 0.030 70 / 0.5),
+    inset 0 -1px 0 oklch(0.045 0.005 50);
+  transition: background var(--bloom-ms) var(--ease-out-expo),
+              box-shadow var(--bloom-ms) var(--ease-out-expo);
+}
+
+body[data-playing="true"] .lamp-glow {
+  background:
+    radial-gradient(circle at 50% 45%,
+      var(--amber-bright) 0%,
+      var(--amber) 35%,
+      oklch(0.45 0.10 60) 70%,
+      oklch(0.20 0.03 58) 100%);
+  box-shadow:
+    inset 0 1px 0 oklch(0.95 0.05 80 / 0.6),
+    inset 0 -2px 8px oklch(0.40 0.10 60),
+    0 0 32px var(--amber-glow),
+    0 0 80px oklch(0.700 0.140 65 / 0.25);
+  animation: lamp-hum 4.2s ease-in-out infinite alternate;
+}
+
+@keyframes lamp-hum {
+  from { filter: brightness(0.96); }
+  to   { filter: brightness(1.04); }
+}
+
+/* Tiny center pip — the "on" indicator dot */
+.lamp-dot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.lamp-dot::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fg-faint);
+  box-shadow:
+    inset 0 1px 0 oklch(0.95 0.02 80 / 0.4),
+    0 1px 0 oklch(0.045 0.005 50);
+  transition: background var(--bloom-ms) var(--ease-out-expo),
+              box-shadow var(--bloom-ms) var(--ease-out-expo);
+}
+body[data-playing="true"] .lamp-dot::after {
+  background: oklch(0.97 0.04 80);
+  box-shadow:
+    0 0 8px var(--amber-bright),
+    0 0 18px var(--amber);
+}
+
+/* ============================================================
+   Controls — labels, slider, ticks, pills
+   ============================================================ */
+.control {
+  display: grid;
+  gap: var(--sp-sm);
+  transition: opacity var(--fade-ms) var(--ease-out-quart);
+}
+
+body[data-idle="true"] .control { opacity: 0.45; }
+
+.control-label {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--fg-dim);
-  font-weight: 400;
 }
 
-/* ---- Volume slider ---- */
-.volume {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.85rem;
-  width: 100%;
+/* ----- volume slider with ticks ----- */
+.slider {
+  position: relative;
+  padding-top: 6px;
 }
 
 input[type="range"] {
@@ -174,96 +373,164 @@ input[type="range"] {
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
-  height: 1px;
-  background: var(--fg-faint);
+  height: 2px;
+  background:
+    linear-gradient(90deg,
+      var(--fg-faint) 0%, var(--fg-faint) var(--vol-pct, 40%),
+      oklch(0.180 0.014 58) var(--vol-pct, 40%), oklch(0.180 0.014 58) 100%);
   border-radius: 1px;
+  box-shadow:
+    inset 0 1px 0 oklch(0.060 0.006 50),
+    0 1px 0 oklch(0.290 0.022 65 / 0.15);
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+  width: 4px;
+  height: 22px;
   background: var(--fg);
-  margin-top: -5.5px;
-  transition: transform var(--t-snap) var(--ease),
-              background var(--t-snap) var(--ease);
+  border-radius: 1px;
+  margin-top: -10px;
+  box-shadow:
+    inset 0 0 0 1px oklch(0.92 0.03 80 / 0.5),
+    0 1px 2px oklch(0.020 0.005 50 / 0.9);
+  transition: background 200ms var(--ease-out-quart),
+              height 200ms var(--ease-out-quart);
 }
 input[type="range"]:hover::-webkit-slider-thumb,
-input[type="range"]:focus-visible::-webkit-slider-thumb { transform: scale(1.35); }
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  height: 26px;
+  margin-top: -12px;
+}
 
 input[type="range"]::-moz-range-track {
-  height: 1px;
+  height: 2px;
   background: var(--fg-faint);
+  border-radius: 1px;
 }
 input[type="range"]::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+  width: 4px;
+  height: 22px;
   background: var(--fg);
   border: 0;
-  transition: transform var(--t-snap) var(--ease),
-              background var(--t-snap) var(--ease);
+  border-radius: 1px;
 }
-input[type="range"]:hover::-moz-range-thumb { transform: scale(1.35); }
 
-body[data-playing="true"] input[type="range"]::-webkit-slider-thumb { background: var(--accent); }
-body[data-playing="true"] input[type="range"]::-moz-range-thumb     { background: var(--accent); }
+body[data-playing="true"] input[type="range"]::-webkit-slider-thumb {
+  background: var(--amber-bright);
+  box-shadow:
+    inset 0 0 0 1px oklch(0.95 0.05 80 / 0.5),
+    0 0 8px var(--amber-glow),
+    0 1px 2px oklch(0.020 0.005 50 / 0.9);
+}
+body[data-playing="true"] input[type="range"]::-moz-range-thumb {
+  background: var(--amber-bright);
+}
 
 input[type="range"]:focus { outline: none; }
 
-/* ---- Sleep timer pills ---- */
-.timer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.85rem;
-  width: 100%;
+.ticks {
+  margin-top: var(--sp-sm);
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  align-items: end;
+  column-gap: 0;
 }
+.tick {
+  font-family: var(--mono-font);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  color: var(--fg-faint);
+  text-align: center;
+  position: relative;
+  height: 14px;
+  line-height: 14px;
+}
+/* Vertical tick mark above each label cell */
+.tick::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 4px;
+  background: var(--fg-faint);
+}
+.tick[data-pos]::before {
+  height: 7px;
+  background: var(--fg-dim);
+}
+.tick:not([data-pos]) { color: transparent; }
 
+/* ----- sleep timer pills ----- */
 .pills {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--sp-xs);
 }
-
 .pill {
   appearance: none;
-  border: 1px solid var(--fg-faint);
-  background: transparent;
+  border: 1px solid var(--fg-mute);
+  background:
+    linear-gradient(180deg, oklch(0.205 0.018 62) 0%, oklch(0.175 0.015 60) 100%);
   color: var(--fg-dim);
-  padding: 0.55rem 0.95rem;
-  border-radius: var(--radius-pill);
+  padding: 10px 4px;
+  border-radius: 3px;
   font: inherit;
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
+  font-family: var(--mono-font);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: color var(--t-snap) var(--ease),
-              border-color var(--t-snap) var(--ease),
-              background var(--t-snap) var(--ease);
+
+  box-shadow:
+    inset 0 1px 0 oklch(0.290 0.024 65 / 0.4),
+    inset 0 -1px 0 oklch(0.075 0.008 55),
+    0 1px 0 oklch(0.020 0.005 50 / 0.4);
+
+  transition:
+    color 200ms var(--ease-out-quart),
+    border-color 200ms var(--ease-out-quart),
+    box-shadow 200ms var(--ease-out-quart),
+    background 200ms var(--ease-out-quart);
 }
 .pill:hover {
   color: var(--fg);
-  border-color: rgba(232, 226, 216, 0.32);
+  border-color: var(--fg-faint);
+}
+.pill:active {
+  box-shadow:
+    inset 0 1px 2px oklch(0.045 0.005 50 / 0.6),
+    inset 0 -1px 0 oklch(0.230 0.020 60);
 }
 .pill[aria-pressed="true"] {
-  color: var(--accent);
-  border-color: var(--accent-line);
-  background: rgba(200, 149, 103, 0.06);
+  color: var(--amber-bright);
+  border-color: var(--amber-soft);
+  background:
+    linear-gradient(180deg, oklch(0.250 0.04 65) 0%, oklch(0.200 0.032 60) 100%);
+  box-shadow:
+    inset 0 1px 0 oklch(0.400 0.06 72 / 0.5),
+    inset 0 -1px 0 oklch(0.075 0.008 55),
+    inset 0 0 12px oklch(0.450 0.080 65 / 0.4),
+    0 0 8px oklch(0.700 0.140 65 / 0.2);
 }
 .pill:focus-visible {
-  outline: 1px solid rgba(232, 226, 216, 0.35);
-  outline-offset: 3px;
+  outline: 1px solid var(--amber-soft);
+  outline-offset: 2px;
 }
 
 .timer-remaining {
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  color: var(--fg-dim);
-  min-height: 1em;
+  font-family: var(--mono-font);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  color: var(--fg-faint);
   font-variant-numeric: tabular-nums;
+  min-height: 1em;
+  text-align: center;
 }
 
 /* ============================================================
@@ -271,29 +538,34 @@ input[type="range"]:focus { outline: none; }
    ============================================================ */
 .install {
   position: fixed;
-  right: clamp(1rem, 3vw, 2rem);
-  bottom: clamp(1rem, 3vw, 2rem);
+  right: clamp(var(--sp-md), 3vw, var(--sp-lg));
+  bottom: clamp(var(--sp-md), 3vw, var(--sp-lg));
+  z-index: 5;
 
   appearance: none;
-  border: 1px solid rgba(232, 226, 216, 0.16);
-  background: rgba(20, 18, 16, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--fg-mute);
+  background: var(--deck-face);
   color: var(--fg-dim);
-  padding: 0.7rem 1.15rem;
-  border-radius: var(--radius-pill);
-  font: inherit;
-  font-size: 0.68rem;
-  letter-spacing: 0.18em;
+  padding: 10px 14px;
+  border-radius: 3px;
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   cursor: pointer;
+
+  box-shadow:
+    inset 0 1px 0 oklch(0.290 0.024 65 / 0.4),
+    inset 0 -1px 0 oklch(0.075 0.008 55),
+    0 4px 10px oklch(0.020 0.005 50 / 0.5);
 
   opacity: 0;
   pointer-events: none;
   transform: translateY(8px);
-  transition: opacity 500ms var(--ease),
-              transform 500ms var(--ease),
-              color    var(--t-snap) var(--ease);
+  transition: opacity 500ms var(--ease-out-quart),
+              transform 500ms var(--ease-out-quart),
+              color 200ms var(--ease-out-quart);
 }
 .install[data-visible="true"] {
   opacity: 1;
@@ -301,18 +573,23 @@ input[type="range"]:focus { outline: none; }
   transform: translateY(0);
 }
 .install:hover { color: var(--fg); }
-.install:focus-visible {
-  outline: 1px solid rgba(232, 226, 216, 0.35);
-  outline-offset: 3px;
-}
 
 /* ============================================================
-   Accessibility — respect reduced motion
+   Accessibility — reduced motion
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-  body[data-playing="true"] .orb { animation: none; }
+  body[data-playing="true"] .lamp-glow { animation: none; }
   * {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* ============================================================
+   Narrow viewports — keep proportions, tighten gaps
+   ============================================================ */
+@media (max-width: 380px) {
+  .deck { padding: var(--sp-lg) var(--sp-md); gap: var(--sp-lg); }
+  .stamp { display: none; }
+  .meter { height: 14px; }
 }

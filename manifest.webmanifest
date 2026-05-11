@@ -1,13 +1,13 @@
 {
   "name": "Stillness — Brown Noise",
   "short_name": "Stillness",
-  "description": "Warm brown noise for focus, sleep, and quiet. Generated continuously, fully offline.",
+  "description": "Late-night brown noise. Generated continuously, fully offline.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#0e0c0a",
-  "background_color": "#0e0c0a",
+  "theme_color": "#0f0c08",
+  "background_color": "#0f0c08",
   "categories": ["lifestyle", "health", "productivity"],
   "icons": [
     {

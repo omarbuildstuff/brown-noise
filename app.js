@@ -12,6 +12,37 @@ const volumeInput   = document.getElementById('volume');
 const installBtn    = document.getElementById('install');
 const pillEls       = Array.from(document.querySelectorAll('.pill'));
 const remainingEl   = document.getElementById('timer-remaining');
+const meterEl       = document.getElementById('meter');
+
+// ---------- VU meter ----------
+// The meter has METER_SEGS segments. We build them once at mount and then
+// flip [data-lit] on each whenever volume or playing state changes. CSS
+// staggers the transition per segment so the bar blooms L→R on play and
+// fades R→L on pause — the "stage transition" signature.
+const METER_SEGS = 24;
+{
+  meterEl.style.setProperty('--segs', METER_SEGS);
+  for (let i = 0; i < METER_SEGS; i++) {
+    const seg = document.createElement('span');
+    seg.className = 'meter-seg';
+    seg.style.setProperty('--i', i);
+    seg.dataset.lit = 'false';
+    meterEl.appendChild(seg);
+  }
+}
+
+function updateMeter() {
+  const pct = Number(volumeInput.value);
+  const lit = playing ? Math.max(1, Math.round((pct / 100) * METER_SEGS)) : 0;
+  for (let i = 0; i < METER_SEGS; i++) {
+    meterEl.children[i].dataset.lit = String(i < lit);
+  }
+  meterEl.setAttribute('aria-valuenow', String(pct));
+}
+
+function updateSliderFill() {
+  document.documentElement.style.setProperty('--vol-pct', volumeInput.value + '%');
+}
 
 // ---------- Constants ----------
 const FADE_IN_MS      = 800;
@@ -56,6 +87,7 @@ const volumeFromSlider = (pct) => {
 {
   const stored = parseFloat(localStorage.getItem(STORAGE_VOL));
   volumeInput.value = Number.isFinite(stored) ? stored : 40;
+  updateSliderFill();
 }
 
 // ---------- Audio engine ----------
@@ -224,6 +256,7 @@ function setPlaying(next) {
   body.dataset.playing = String(next);
   toggleBtn.setAttribute('aria-pressed', String(next));
   toggleBtn.setAttribute('aria-label', next ? 'Pause brown noise' : 'Play brown noise');
+  updateMeter();
   if ('mediaSession' in navigator) {
     navigator.mediaSession.playbackState = next ? 'playing' : 'paused';
   }
@@ -232,6 +265,8 @@ function setPlaying(next) {
 // ---------- Volume ----------
 function applyVolume() {
   localStorage.setItem(STORAGE_VOL, volumeInput.value);
+  updateSliderFill();
+  updateMeter();
   if (!playing) return;                    // don't ramp up muted audio
   rampGain(volumeFromSlider(volumeInput.value), 120);
 }
@@ -390,3 +425,8 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
+
+// Initial paint settled — enable staggered transitions on the meter.
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => { body.dataset.mounted = 'true'; });
+});
