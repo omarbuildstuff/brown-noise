@@ -24,6 +24,7 @@ const STORAGE_TIMER   = 'stillness:timer';
 
 // ---------- State ----------
 let ctx          = null;
+let graphBuilt   = false;
 let noiseNode    = null;
 let masterGain   = null;
 let playing      = false;
@@ -48,16 +49,38 @@ const volumeFromSlider = (pct) => {
 }
 
 // ---------- Audio engine ----------
-async function ensureAudio() {
-  if (ctx) {
-    if (ctx.state === 'suspended') await ctx.resume();
-    return;
+//
+// Splitting "unlock the context" from "build the graph" matters: Chrome's
+// autoplay policy only accepts a resume() call that happens synchronously
+// inside the user-gesture task. The `await audioWorklet.addModule()` later
+// in buildGraph() can spend that gesture token, so we unlock the context
+// during the first pointerdown/keydown (no awaits) and only build the
+// graph when the user actually presses play.
+
+function unlockCtx() {
+  if (!ctx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    ctx = new AC({ latencyHint: 'playback' });
   }
-  const AC = window.AudioContext || window.webkitAudioContext;
-  ctx = new AC({ latencyHint: 'playback' });
+  // Fire-and-forget — resume must be called in-gesture but doesn't need awaiting.
+  ctx.resume?.().catch(() => {});
+}
+
+async function buildGraph() {
+  if (graphBuilt) return;
+  if (!ctx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    ctx = new AC({ latencyHint: 'playback' });
+  }
 
   await ctx.audioWorklet.addModule('./noise-worklet.js');
-  noiseNode = new AudioWorkletNode(ctx, 'brown-noise');
+  noiseNode = new AudioWorkletNode(ctx, 'brown-noise', {
+    // Force mono output — without this, some browsers leave channel 1
+    // unwritten (we only fill outputs[0][0]) and the signal is silent on
+    // the right side of a stereo destination.
+    outputChannelCount: [1],
+  });
 
   // Subsonic rumble removal — brown noise integrates DC drift, the highpass
   // at 20 Hz keeps the speakers from wasting cone excursion below audible.
@@ -69,8 +92,6 @@ async function ensureAudio() {
   // Cascade two lowpass biquads at 500 Hz for a steep ~-24 dB/oct shoulder
   // above 500 Hz. Combined with brown noise's native -6 dB/oct slope this
   // gives a deep, warm waterfall with negligible high-frequency hiss.
-  // A single shallow lowpass left too much energy in the 1–2 kHz band,
-  // which read as "windy / hissy" instead of "deep".
   const lp1 = ctx.createBiquadFilter();
   lp1.type = 'lowpass';
   lp1.frequency.value = 500;
@@ -85,7 +106,25 @@ async function ensureAudio() {
   masterGain.gain.value = SILENT_GAIN;
 
   noiseNode.connect(hp).connect(lp1).connect(lp2).connect(masterGain).connect(ctx.destination);
+  graphBuilt = true;
 }
+
+async function ensureAudio() {
+  unlockCtx();                       // safe to call repeatedly
+  if (ctx.state === 'suspended') {
+    try { await ctx.resume(); } catch {}
+  }
+  await buildGraph();
+  if (ctx.state === 'suspended') {
+    try { await ctx.resume(); } catch {}
+  }
+}
+
+// Capture the very first user gesture to unlock the context, well before
+// the worklet finishes loading.
+['pointerdown', 'keydown', 'touchstart'].forEach((ev) =>
+  window.addEventListener(ev, unlockCtx, { once: true, passive: true, capture: true })
+);
 
 // Cancel pending automation and pin the current value before scheduling a
 // new ramp — without this, overlapping ramps glitch on rapid toggles.
