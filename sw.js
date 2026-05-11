@@ -2,7 +2,7 @@
 // completely offline after the first visit. The noise itself is generated
 // in the browser, so the only thing we need to ship offline is the shell.
 
-const CACHE = 'stillness-v3';
+const CACHE = 'stillness-v4';
 const SHELL = [
   './',
   './index.html',

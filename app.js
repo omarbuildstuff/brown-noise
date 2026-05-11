@@ -27,8 +27,18 @@ let ctx          = null;
 let graphBuilt   = false;
 let noiseNode    = null;
 let masterGain   = null;
+let iosAudio     = null;       // HTMLAudioElement used as iOS playback route
 let playing      = false;
 let wakeLock     = null;
+
+// iOS Safari (incl. iPadOS reporting as Macintosh) sends Web Audio output
+// to the "ambient" audio session category, which is muted by the hardware
+// silent switch and won't appear on the lock screen. Routing the graph
+// through a MediaStream → <audio> element promotes it to "playback",
+// which respects the volume slider, ignores the silent switch, and shows
+// up on Control Center / lock screen.
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (/Macintosh/.test(navigator.userAgent) && 'ontouchend' in document);
 let timerTimeoutId  = null;
 let timerFadeTimeoutId = null;
 let timerEndAt   = 0;
@@ -105,7 +115,25 @@ async function buildGraph() {
   masterGain = ctx.createGain();
   masterGain.gain.value = SILENT_GAIN;
 
-  noiseNode.connect(hp).connect(lp1).connect(lp2).connect(masterGain).connect(ctx.destination);
+  noiseNode.connect(hp).connect(lp1).connect(lp2).connect(masterGain);
+
+  if (isIOS) {
+    // Web Audio → MediaStream → HTMLAudioElement. The <audio> element is
+    // what iOS Safari counts as media playback, so the silent switch and
+    // background-audio rules behave like a normal music app.
+    const streamDest = ctx.createMediaStreamDestination();
+    masterGain.connect(streamDest);
+
+    iosAudio = document.createElement('audio');
+    iosAudio.setAttribute('playsinline', '');
+    iosAudio.playsInline = true;
+    iosAudio.autoplay = true;
+    iosAudio.srcObject = streamDest.stream;
+    document.body.appendChild(iosAudio);
+    try { await iosAudio.play(); } catch { /* user may need to tap again */ }
+  } else {
+    masterGain.connect(ctx.destination);
+  }
   graphBuilt = true;
 }
 
