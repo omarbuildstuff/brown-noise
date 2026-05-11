@@ -77,6 +77,30 @@ function unlockCtx() {
   ctx.resume?.().catch(() => {});
 }
 
+// Pre-generate a long mono brown-noise buffer using the same leaky-integrator
+// math as the (now-removed) AudioWorklet. AudioWorklet has had years of
+// flakiness on iOS Safari (addModule resolves but process() is never
+// invoked on some devices) — an AudioBufferSourceNode is universally
+// reliable, runs entirely off the main thread once started, and the loop
+// point is inaudible because brown noise is unstructured and the value
+// stays close to zero.
+function generateBrownBuffer(audioCtx, seconds = 60) {
+  const sr = audioCtx.sampleRate;
+  const len = Math.floor(sr * seconds);
+  const buf = audioCtx.createBuffer(1, len, sr);
+  const data = buf.getChannelData(0);
+  let last = 0;
+  const STEP = 0.005;
+  const LEAK = 0.005;
+  const SCALE = 8;
+  for (let i = 0; i < len; i++) {
+    const white = Math.random() * 2 - 1;
+    last = (last + STEP * white) / (1 + LEAK);
+    data[i] = last * SCALE;
+  }
+  return buf;
+}
+
 async function buildGraph() {
   if (graphBuilt) return;
   if (!ctx) {
@@ -84,13 +108,10 @@ async function buildGraph() {
     ctx = new AC({ latencyHint: 'playback' });
   }
 
-  await ctx.audioWorklet.addModule('./noise-worklet.js');
-  noiseNode = new AudioWorkletNode(ctx, 'brown-noise', {
-    // Force mono output — without this, some browsers leave channel 1
-    // unwritten (we only fill outputs[0][0]) and the signal is silent on
-    // the right side of a stereo destination.
-    outputChannelCount: [1],
-  });
+  const buffer = generateBrownBuffer(ctx, 60);
+  noiseNode = ctx.createBufferSource();
+  noiseNode.buffer = buffer;
+  noiseNode.loop = true;
 
   // Subsonic rumble removal — brown noise integrates DC drift, the highpass
   // at 20 Hz keeps the speakers from wasting cone excursion below audible.
@@ -134,6 +155,10 @@ async function buildGraph() {
   } else {
     masterGain.connect(ctx.destination);
   }
+
+  // BufferSource must be start()ed exactly once; subsequent toggles only
+  // change the master gain (cheap and click-free).
+  noiseNode.start(0);
   graphBuilt = true;
 }
 
