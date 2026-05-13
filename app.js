@@ -179,18 +179,7 @@ async function buildGraph() {
   noiseNode.connect(hp).connect(lp1).connect(lp2).connect(masterGain);
 
   if (isIOS) {
-    // Web Audio → MediaStream → HTMLAudioElement. The <audio> element is
-    // what iOS Safari counts as media playback, so the silent switch and
-    // background-audio rules behave like a normal music app.
-    const streamDest = ctx.createMediaStreamDestination();
-    masterGain.connect(streamDest);
-
-    iosAudio = document.createElement('audio');
-    iosAudio.setAttribute('playsinline', '');
-    iosAudio.playsInline = true;
-    iosAudio.autoplay = true;
-    iosAudio.srcObject = streamDest.stream;
-    document.body.appendChild(iosAudio);
+    buildIOSRoute();
     try { await iosAudio.play(); } catch { /* user may need to tap again */ }
   } else {
     masterGain.connect(ctx.destination);
@@ -200,6 +189,63 @@ async function buildGraph() {
   // change the master gain (cheap and click-free).
   noiseNode.start(0);
   graphBuilt = true;
+}
+
+// Web Audio → MediaStream → HTMLAudioElement. The <audio> element is what
+// iOS Safari counts as media playback, so the silent switch and background-
+// audio rules behave like a normal music app. Extracted so it can be torn
+// down and rebuilt: after long backgrounding or a system audio reset the
+// underlying MediaStream can stop delivering frames even though the element
+// looks healthy — the only fix from JS is a fresh stream + element.
+function buildIOSRoute() {
+  if (!ctx || !masterGain) return null;
+  if (iosAudio) {
+    try { iosAudio.pause(); } catch {}
+    try { iosAudio.srcObject = null; } catch {}
+    iosAudio.remove();
+    iosAudio = null;
+  }
+  try { masterGain.disconnect(); } catch {}
+
+  const streamDest = ctx.createMediaStreamDestination();
+  masterGain.connect(streamDest);
+
+  const el = document.createElement('audio');
+  el.setAttribute('playsinline', '');
+  el.playsInline = true;
+  el.autoplay = true;
+  el.srcObject = streamDest.stream;
+  document.body.appendChild(el);
+
+  // iOS pauses the element on system interruption (calls, Siri, alarms,
+  // route changes). When we come back foregrounded the element stays paused
+  // and the UI sits in a "playing but silent" state — nudge it back.
+  el.addEventListener('pause', () => {
+    if (el !== iosAudio) return;
+    if (!playing || document.visibilityState !== 'visible') return;
+    el.play().catch(() => {});
+  });
+  el.addEventListener('error', () => {
+    if (el !== iosAudio || !playing) return;
+    tryStartIOSAudio();
+  });
+
+  iosAudio = el;
+  return el;
+}
+
+// Resume the iOS sink, rebuilding the route once if play() rejects (covers
+// the "phone reboot" case where the MediaStream pipeline is dead).
+async function tryStartIOSAudio() {
+  if (!iosAudio) return false;
+  try { await iosAudio.play(); return true; } catch {}
+  try {
+    buildIOSRoute();
+    await iosAudio.play();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function ensureAudio() {
@@ -235,6 +281,15 @@ function rampGain(target, durationMs) {
 
 async function play() {
   await ensureAudio();
+  if (isIOS && iosAudio) {
+    const ok = await tryStartIOSAudio();
+    if (!ok) {
+      // Sink refuses to start — leave the UI in the paused state so the
+      // next tap retries from a clean baseline instead of silently lying.
+      releaseWakeLock();
+      return;
+    }
+  }
   rampGain(volumeFromSlider(volumeInput.value), FADE_IN_MS);
   setPlaying(true);
   acquireWakeLock();
@@ -347,10 +402,29 @@ async function releaseWakeLock() {
   try { await wakeLock?.release(); } catch {}
   wakeLock = null;
 }
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && playing && !wakeLock) {
-    acquireWakeLock();
+// On iOS the AudioContext and the <audio> sink can both be left suspended
+// after backgrounding — re-acquire the wake lock AND nudge the audio back
+// to running when we return to the foreground.
+async function resumeAfterBackground() {
+  if (!playing) return;
+  try { await ctx?.resume?.(); } catch {}
+  if (isIOS && iosAudio) {
+    const ok = await tryStartIOSAudio();
+    if (!ok) {
+      setPlaying(false);
+      releaseWakeLock();
+    }
   }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (playing && !wakeLock) acquireWakeLock();
+  resumeAfterBackground();
+});
+// bfcache restore (swipe-back from another app) doesn't always fire
+// visibilitychange on iOS Safari.
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) resumeAfterBackground();
 });
 
 // ---------- Media Session (lock screen / Bluetooth controls) ----------
